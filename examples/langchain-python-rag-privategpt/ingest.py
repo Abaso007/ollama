@@ -43,12 +43,11 @@ class MyElmLoader(UnstructuredEmailLoader):
             try:
                 doc = UnstructuredEmailLoader.load(self)
             except ValueError as e:
-                if 'text/html content not found in email' in str(e):
-                    # Try plain text
-                    self.unstructured_kwargs["content_source"]="text/plain"
-                    doc = UnstructuredEmailLoader.load(self)
-                else:
+                if 'text/html content not found in email' not in str(e):
                     raise
+                # Try plain text
+                self.unstructured_kwargs["content_source"]="text/plain"
+                doc = UnstructuredEmailLoader.load(self)
         except Exception as e:
             # Add file_path to exception message
             raise type(e)(f"{self.file_path}: {e}") from e
@@ -99,7 +98,7 @@ def load_documents(source_dir: str, ignored_files: List[str] = []) -> List[Docum
     with Pool(processes=os.cpu_count()) as pool:
         results = []
         with tqdm(total=len(filtered_files), desc='Loading new documents', ncols=80) as pbar:
-            for i, docs in enumerate(pool.imap_unordered(load_single_document, filtered_files)):
+            for docs in pool.imap_unordered(load_single_document, filtered_files):
                 results.extend(docs)
                 pbar.update()
 
@@ -143,18 +142,20 @@ def main():
         db = Chroma(persist_directory=persist_directory, embedding_function=embeddings, client_settings=CHROMA_SETTINGS)
         collection = db.get()
         texts = process_documents([metadata['source'] for metadata in collection['metadatas']])
-        print(f"Creating embeddings. May take some minutes...")
+        print("Creating embeddings. May take some minutes...")
         db.add_documents(texts)
     else:
         # Create and store locally vectorstore
         print("Creating new vectorstore")
         texts = process_documents()
-        print(f"Creating embeddings. May take some minutes...")
+        print("Creating embeddings. May take some minutes...")
         db = Chroma.from_documents(texts, embeddings, persist_directory=persist_directory)
     db.persist()
     db = None
 
-    print(f"Ingestion complete! You can now run privateGPT.py to query your documents")
+    print(
+        "Ingestion complete! You can now run privateGPT.py to query your documents"
+    )
 
 
 if __name__ == "__main__":

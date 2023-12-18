@@ -25,7 +25,7 @@ data = {
     "options": {"temperature": 2.5, "top_p": 0.99, "top_k": 100},
 }
 
-print(f"Generating a sample user")
+print("Generating a sample user")
 response = requests.post("http://localhost:11434/api/generate", json=data, stream=False)
 json_data = json.loads(response.text)
 print(json.dumps(json.loads(json_data["response"]), indent=2))

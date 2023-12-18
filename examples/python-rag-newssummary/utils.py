@@ -62,8 +62,7 @@ def get_url_for_topic(stdscr):
 def getUrls(feed_url, n=20):
     feed = feedparser.parse(feed_url)
     entries = feed.entries[-n:]
-    urls = [entry.link for entry in entries]
-    return urls
+    return [entry.link for entry in entries]
 
 # Often there are a bunch of ads and menus on pages for a news article. This uses newspaper3k to get just the text of just the article.
 def getArticleText(url):
@@ -94,15 +93,12 @@ def get_summary(text):
 def knn_search(question_embedding, embeddings, k=5):
     X = np.array([item['embedding'] for article in embeddings for item in article['embeddings']])
     source_texts = [item['source'] for article in embeddings for item in article['embeddings']]
-    
+
     # Fit a KNN model on the embeddings
     knn = NearestNeighbors(n_neighbors=k, metric='cosine')
     knn.fit(X)
-    
+
     # Find the indices and distances of the k-nearest neighbors
     distances, indices = knn.kneighbors(question_embedding, n_neighbors=k)
-    
-    # Get the indices and source texts of the best matches
-    best_matches = [(indices[0][i], source_texts[indices[0][i]]) for i in range(k)]
-    
-    return best_matches
+
+    return [(indices[0][i], source_texts[indices[0][i]]) for i in range(k)]
