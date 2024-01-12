@@ -23,16 +23,16 @@ def generate(model_name, prompt, system=None, template=None, format="", context=
             "options": options,
             "format": format,
         }
-        
+
         # Remove keys with None values
         payload = {k: v for k, v in payload.items() if v is not None}
-        
+
         with requests.post(url, json=payload, stream=True) as response:
             response.raise_for_status()
-            
+
             # Creating a variable to hold the context history of the final chunk
             final_context = None
-            
+
             # Variable to hold concatenated response strings if no callback is provided
             full_response = ""
 
@@ -41,21 +41,19 @@ def generate(model_name, prompt, system=None, template=None, format="", context=
                 if line:
                     # Parsing each line (JSON chunk) and extracting the details
                     chunk = json.loads(line)
-                    
+
                     # If a callback function is provided, call it with the chunk
                     if callback:
                         callback(chunk)
-                    else:
-                        # If this is not the last chunk, add the "response" field value to full_response and print it
-                        if not chunk.get("done"):
-                            response_piece = chunk.get("response", "")
-                            full_response += response_piece
-                            print(response_piece, end="", flush=True)
-                    
+                    elif not chunk.get("done"):
+                        response_piece = chunk.get("response", "")
+                        full_response += response_piece
+                        print(response_piece, end="", flush=True)
+
                     # Check if it's the last chunk (done is true)
                     if chunk.get("done"):
                         final_context = chunk.get("context")
-            
+
             # Return the full response and the final context
             return full_response, final_context
     except requests.exceptions.RequestException as e:
@@ -220,9 +218,7 @@ def list():
         response = requests.get(f"{BASE_URL}/api/tags")
         response.raise_for_status()
         data = response.json()
-        models = data.get('models', [])
-        return models
-
+        return data.get('models', [])
     except requests.exceptions.RequestException as e:
         print(f"An error occurred: {e}")
         return None
@@ -265,10 +261,8 @@ def show(model_name):
         payload = {"name": model_name}
         response = requests.post(url, json=payload)
         response.raise_for_status()
-        
-        # Parse the JSON response and return it
-        data = response.json()
-        return data
+
+        return response.json()
     except requests.exceptions.RequestException as e:
         print(f"An error occurred: {e}")
         return None
